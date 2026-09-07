@@ -6,7 +6,7 @@
 Fractional-N charge-pump PLL with an LC-tank VCO (custom openEMS-verified
 spiral inductor, MOS-cap varactor) and a MASH 1-1-1 ΣΔ modulator dithering a
 ÷64–127 multi-modulus divider; integer-N fallback via MASH bypass. This macro
-is the **Chipalooza Challenge #2 entry** and targets **SG13CMOS5L** (not
+is the **Chipalooza Challenge #6 entry** and targets **SG13CMOS5L** (not
 SG13G2 like the rest of the repo — run `sak-pdk ihp-sg13cmos5l` first). Full
 architecture, specs, reuse map (SMACD'26 open PLL, arXiv 2607.08852), and
 test plan: [`doc/chipalooza_pll_proposal.md`](doc/chipalooza_pll_proposal.md).

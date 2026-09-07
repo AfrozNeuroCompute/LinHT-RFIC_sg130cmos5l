@@ -6,8 +6,8 @@ This repository designs the radio IC for the **LinHT** open-source handheld radi
 block of the IC is built on the IHP SG13CMOS5L Open-PDK.
 
 The PLL comes first. It is an entry to
-[**Chipalooza Challenge #2**](https://opencircuitdesign.com/chipalooza/), an open-source
-analog IP shuttle that runs on the same PDK.
+[**Chipalooza Challenge #6**](https://opencircuitdesign.com/chipalooza/), an open-source
+analog IP shuttle that runs on the same PDK. The submission deadline is 2027-07-05.
 
 > [!IMPORTANT]
 > All work needs the [IIC-OSIC-TOOLS](https://github.com/iic-jku/IIC-OSIC-TOOLS) container,

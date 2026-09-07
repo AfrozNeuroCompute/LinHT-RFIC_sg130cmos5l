@@ -1,6 +1,8 @@
 # Chip Pinout
 
-This document lists every bondpad of the chip together with the top-level `chip_top` port it is attached to and the role it plays inside the core. The padframe layout is **8 pads per side, 32 bondpads total**.
+This document lists every bondpad of the chip. For each pad it gives the top-level `chip_top`
+port that the pad attaches to, and the role that the pad plays inside the core. The padframe
+layout is **8 pads per side, 32 bondpads total**.
 
 Order convention:
 - `PAD_WEST` / `PAD_EAST`: **bottom → top**
@@ -31,7 +33,7 @@ Defined in [chip_top.sv](../rtl/chip_top.sv):
 | `bidir_PAD[3:0]`  | inout     | `NUM_BIDIR_PADS=4`    | counter1 MSB nibble / inverter1 vin1..vin4      |
 | `analog_PAD[3:0]` | inout     | `NUM_ANALOG_PADS=4`   | inverter2 analog channels 1 and 2               |
 
-The `output_PAD` bit-to-role mapping is fixed inside [chip_core.sv](../rtl/chip_core.sv):
+[chip_core.sv](../rtl/chip_core.sv) fixes the `output_PAD` bit-to-role mapping:
 
 | `output_PAD` bit | Source signal                                            |
 | ---------------- | ---------------------------------------------------------|
@@ -95,7 +97,9 @@ The `output_PAD` bit-to-role mapping is fixed inside [chip_core.sv](../rtl/chip_
 | 7 | `bidir_PAD[2]`    | `g_bidirs[2].bidir_pad`     | digital         | bidir     | `counter1_value[6]` (out, when `enable=1`) / `inverter1.vin3` (in)         |
 | 8 | `bidir_PAD[3]`    | `g_bidirs[3].bidir_pad`     | digital         | bidir     | `counter1_value[7]` (MSB) (out, when `enable=1`) / `inverter1.vin4` (in)   |
 
-`bidir_oe[i]` is wired to `input_PAD[0]`, i.e. the bidir pads are **outputs when `enable = 1`** (counter1's MSB nibble visible externally) and **inputs when `enable = 0`** (external stimuli drive inverter1's `vin1..vin4`).
+`bidir_oe[i]` is wired to `input_PAD[0]`. The bidir pads are therefore **outputs when
+`enable = 1`**, which makes counter1's MSB nibble visible externally. They are **inputs when
+`enable = 0`**, and external stimuli then drive inverter1's `vin1..vin4`.
 
 
 ## South (left → right)
@@ -125,7 +129,9 @@ The `output_PAD` bit-to-role mapping is fixed inside [chip_core.sv](../rtl/chip_
 | 7 | `output_PAD[14]`  | `g_outputs[14].output_pad`  | digital         | out       | `inverter1.vout3`                                           |
 | 8 | `output_PAD[15]`  | `g_outputs[15].output_pad`  | digital         | out       | `inverter1.vout4`                                           |
 
-`inverter2` has four channels in total. Only **channels 1 and 2** are exposed off-chip. Channels 3 and 4 have `vin3`, `vout3`, `vin4`, `vout4` tied to `VSS` inside [chip_core.sv](../rtl/chip_core.sv).
+`inverter2` has four channels in total. Only **channels 1 and 2** are exposed off-chip. Channels
+3 and 4 have `vin3`, `vout3`, `vin4`, `vout4` tied to `VSS` inside
+[chip_core.sv](../rtl/chip_core.sv).
 
 The `sg13cmos5l_IOPadAnalog` cell exposes two internal nodes per pad:
 
@@ -134,11 +140,20 @@ The `sg13cmos5l_IOPadAnalog` cell exposes two internal nodes per pad:
 | `padres` | Via the pad's **secondary** ESD resistor       | Input signals: the series resistor limits ESD current and protects sensitive gate oxides |
 | `padbare` | **Direct** connection to the pad metal (only primary ESD diodes present) | Output signals: bypasses the resistor to minimise parasitic RC and signal distortion |
 
-`inverter2.vin1/vin2` are connected to `analog_PADRES[0:1]` (through the resistor) and `inverter2.vout1/vout2` are driven onto `analog_PADBARE[2:3]` (direct connection). In [chip_core.sv](../rtl/chip_core.sv), these appear as the corresponding core nets `analog_padres[0:1]` and `analog_padbare[2:3]`.
+`inverter2.vin1/vin2` connect to `analog_PADRES[0:1]`, through the resistor. `inverter2.vout1/vout2`
+drive `analog_PADBARE[2:3]`, a direct connection. In [chip_core.sv](../rtl/chip_core.sv), these
+appear as the core nets `analog_padres[0:1]` and `analog_padbare[2:3]`.
 
 Two details of the pad cell are specific to this PDK instance:
 
-- `padbare` is not part of the IHP `sg13cmos5l_io` release. It is added by the repo's own copy of the library in [ip/sg13cmos5l_io_custom/](../ip/sg13cmos5l_io_custom/): a LEF pin, a Verilog port and a Liberty pin block in all seven `.lib` files. `PAD_LEFS` and `PAD_VERILOG_MODELS` in [config.yaml](../flow/librelane/config.yaml) point the flow at that copy rather than at the PDK.
-- `padres` and `padbare` are exposed on **Metal3 only**, at the top edge of the 80 × 180 µm pad cell. The `pad` pin itself is drawn on Metal2, Metal3, Metal4 and TopMetal1.
+- `padbare` is not part of the IHP `sg13cmos5l_io` release. The repo's own copy of the library in
+  [ip/sg13cmos5l_io_custom/](../ip/sg13cmos5l_io_custom/) adds it, as a LEF pin, a Verilog port
+  and a Liberty pin block in all seven `.lib` files. `PAD_LEFS` and `PAD_VERILOG_MODELS` in
+  [config.yaml](../flow/librelane/config.yaml) point the flow at that copy, and not at the PDK.
+- `padres` and `padbare` are exposed on **Metal3 only**, at the top edge of the 80 × 180 µm pad
+  cell. The `pad` pin itself is drawn on Metal2, Metal3, Metal4 and TopMetal1.
 
-The four analog nets are protected on the way from the pad to the macro: they are listed in `RSZ_DONT_TOUCH_LIST` so the resizer leaves them alone, and `DRT_ASSIGN_NDR` applies the `NDR_analog` non-default rule (0.5 µm width and spacing on Metal1 to Metal4) during detailed routing. There is no Metal5 entry in that rule because this stack has no Metal5.
+Two mechanisms protect the four analog nets on the way from the pad to the macro.
+`RSZ_DONT_TOUCH_LIST` lists them, so the resizer leaves them alone. During detailed routing,
+`DRT_ASSIGN_NDR` applies the `NDR_analog` non-default rule, which is 0.5 µm width and spacing on
+Metal1 to Metal4. That rule has no Metal5 entry, because this stack has no Metal5.

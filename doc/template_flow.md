@@ -4,8 +4,8 @@ This file holds the flow documentation that came from the README of the upstream
 [`iic-jku/ihp-sg13cmos5l-ams-chip-template`](https://github.com/iic-jku/ihp-sg13cmos5l-ams-chip-template).
 It moved here to keep the top-level [README](../README.md) short.
 
-The text is the upstream text. It also documents the changes this repository makes to the
-template:
+The content is the upstream content, rewritten in Simplified Technical English. It also
+documents the changes that this repository makes to the template:
 
 - `make init-macro` and `make init-submodule`, which the template does not have.
 - The `SIM` variable of `make sim-xschem`, which selects ngspice or VACASK.
@@ -206,9 +206,9 @@ Xschem reads exactly one `xschemrc` at start-up, and that file decides which sym
 
 All of them run the same four steps, in this order:
 
-1. **Pin the PDK.** `PDK_ROOT` is probed in the usual install locations if the environment does not set it. `PDK` is then set to `ihp-sg13cmos5l` unconditionally, not merely defaulted: this project targets SG13CMOS5L only, and an inherited `PDK` naming a different *installed* PDK — which a shared `$DESIGNS/.designinit` can easily supply when several checkouts live side by side — would otherwise be accepted silently. The Makefiles pin and export the same set (`PDK`, `PDKPATH`, `STD_CELL_LIBRARY`, `SPICE_USERINIT_DIR`, `KLAYOUT_PATH`) for the non-Xschem tools; `make PDK=<other>` on the command line still overrides.
+1. **Pin the PDK.** If the environment does not set `PDK_ROOT`, the file probes the usual install locations. `PDK` is then set to `ihp-sg13cmos5l` unconditionally, and not merely defaulted. This project targets SG13CMOS5L only. An inherited `PDK` that names a different *installed* PDK would otherwise be accepted with no message. A shared `$DESIGNS/.designinit` can easily supply such a value when several checkouts are side by side. The Makefiles pin and export the same set (`PDK`, `PDKPATH`, `STD_CELL_LIBRARY`, `SPICE_USERINIT_DIR`, `KLAYOUT_PATH`) for the non-Xschem tools. `make PDK=<other>` on the command line still overrides them.
 2. **Source the PDK `xschemrc`.** `$PDK_ROOT/$PDK/libs.tech/xschem/xschemrc` brings in the IHP device symbols, the ngspice model paths and the IHP menu. It is guarded by `[info exists PDK]` so it is read once even when several project files are chained.
-3. **Add the project library paths.** `append_xschem_library_path_unique` appends a folder to `XSCHEM_LIBRARY_PATH` only if it is not already there, so the same folder never appears twice no matter how the files are chained. [`testbenches/xschem/xschemrc`](../testbenches/xschem/xschemrc) adds none of its own and gets its paths from the file it sources.
+3. **Add the project library paths.** `append_xschem_library_path_unique` appends a folder to `XSCHEM_LIBRARY_PATH` only if it is not already there. The same folder therefore never appears twice, no matter how the files are chained. [`testbenches/xschem/xschemrc`](../testbenches/xschem/xschemrc) adds none of its own. It gets its paths from the file it sources.
 4. **Pin the netlist directory.** `pin_netlist_dir` decides where `xschem netlist` and the simulators write.
 
 Both helper procedures are defined behind an `[info commands ...]` guard, so sourcing one file from another is harmless and the order does not matter.
@@ -228,7 +228,7 @@ macros/inverter/verification/cace/templates/xschemrc
 └─ source macros/inverter/schematic/xschem/xschemrc
 ```
 
-Each schematic folder puts itself and its sibling testbenches folder on the library path, and each testbenches folder does the reverse. The chip top-level therefore sees all six schematic and testbench folders, which is what lets `chip_top.sch` instantiate `inverter_top.sym` and `counter_top.sym`, and what lets you open a macro testbench from a chip top-level session. The macro files do not source each other, so a macro can be opened and simulated on its own without the top level being present.
+Each schematic folder puts itself and its sibling testbenches folder on the library path. Each testbenches folder does the reverse. The chip top-level therefore sees all six schematic and testbench folders. That is what lets `chip_top.sch` instantiate `inverter_top.sym` and `counter_top.sym`. It is also what lets you open a macro testbench from a chip top-level session. The macro files do not source each other, so you can open and simulate a macro on its own, without the top level.
 
 
 ### Where Netlists and Simulation Output Go
@@ -242,7 +242,7 @@ Each schematic folder puts itself and its sibling testbenches folder on the libr
 | `.../cace/templates` | `.../cace/templates/simulations` |
 | anywhere else (a PDK example) | left at the value the `xschemrc` pinned |
 
-It runs twice: once while the `xschemrc` is read, using that file's own folder, and again through Xschem's `load_file_postprocess` hook for every schematic that is opened afterwards. The second call is the important one. Because the chip top-level puts the macro folders on the library path, a macro testbench can be opened from a chip top-level session, and without the hook its netlist would land in `testbenches/xschem/simulations/`. Its relative includes such as `.include ../../../netlist/pex/inverter_magic_pex_3.spice` are resolved by ngspice relative to the netlist file, so they would then point at the wrong tree and the simulation would abort. With the hook, the netlist always lands next to its own schematic and the includes resolve.
+It runs twice. It runs once while the `xschemrc` is read, using that file's own folder. It runs again through Xschem's `load_file_postprocess` hook, for every schematic that is opened afterwards. The second call is the important one. The chip top-level puts the macro folders on the library path, so you can open a macro testbench from a chip top-level session. Without the hook, its netlist would land in `testbenches/xschem/simulations/`. ngspice resolves relative includes such as `.include ../../../netlist/pex/inverter_magic_pex_3.spice` against the netlist file. They would then point at the wrong tree, and the simulation would abort. With the hook, the netlist always lands next to its own schematic, and the includes resolve.
 
 A `set netlist_dir` passed on the Xschem command line still wins, because `--command` runs after the file is loaded. The LVS netlist targets rely on this to write into `netlist/schematic/` instead.
 
@@ -258,11 +258,11 @@ All `simulations/` folders are generated and git-ignored.
 
 ## Makefile Structure
 
-The whole flow is driven by Makefiles. The top-level `Makefile` builds the chip, and every component under [`macros/`](../macros/) and [`ip/`](../ip/) has its own `Makefile` and `README.md` following the same conventions (`make help`, `make all`, and so on). You can run each component from the top level or directly from inside its own folder. The figure below shows how the targets are connected when you run `make all` at the top level.
+Makefiles drive the whole flow. The top-level `Makefile` builds the chip. Every component under [`macros/`](../macros/) and [`ip/`](../ip/) has its own `Makefile` and `README.md`, which follow the same conventions (`make help`, `make all`, and so on). You can run each component from the top level, or from inside its own folder. The figure below shows how the targets connect when you run `make all` at the top level.
 
 <p align="center">
-  <a href="tutorial/fig/targets_overview/targets_overview.png">
-    <img src="tutorial/fig/targets_overview/targets_overview.png" alt="Overview of the Makefile targets" width=100%>
+  <a href="../tutorial/fig/targets_overview/targets_overview.png">
+    <img src="../tutorial/fig/targets_overview/targets_overview.png" alt="Overview of the Makefile targets" width=100%>
   </a>
   <br>
   <em>Overview of the Makefile targets.</em>
@@ -270,11 +270,11 @@ The whole flow is driven by Makefiles. The top-level `Makefile` builds the chip,
 
 Every coloured branch corresponds to one deliverable (top chip, bondpad, logos, digital macro, analog macro, packaging). The grey targets connect `make all` to those branches.
 
-Solid arrows are direct `$(MAKE) <target>` calls within a single Makefile. Dashed arrows descend into a subdirectory, either as a recursive `$(MAKE) -C <dir> all` call into a sub-Makefile or as the Python bondplan flow in `packaging/`. The numbers on the second level give the execution order of `make all`, and the vertical order inside the coloured boxes gives the execution order of each sub-Makefile.
+Solid arrows are direct `$(MAKE) <target>` calls within a single Makefile. Dashed arrows descend into a subdirectory. They are either a recursive `$(MAKE) -C <dir> all` call into a sub-Makefile, or the Python bondplan flow in `packaging/`. The numbers on the second level give the execution order of `make all`. The vertical order inside the coloured boxes gives the execution order of each sub-Makefile.
 
 At the top level, `make all` runs four steps in this order:
 
-1. `build-all` initialises the submodules and builds every component by calling its own `all` target: bondpad, logos, digital macro, analog macro, and finally the chip assembly with `build-top` (LibreLane, copy-back of all artifacts, logo and fill insertion, final GDS render).
+1. `build-all` initialises the submodules. It then builds every component by calling that component's own `all` target: bondpad, logos, digital macro, analog macro. Last comes the chip assembly, with `build-top` (LibreLane, copy-back of all artifacts, logo and fill insertion, final GDS render).
 2. `magic-drc` runs the DRC of the final `chip_top` and `chip_top_logo_fill` GDS. The KLayout DRC is not part of `make all` to shorten the runtime. Run it separately with `klayout-drc-minimum` or `klayout-drc-regular`.
 3. `sim-all` runs the top-level RTL and gate-level simulations on the netlists produced by this build.
 4. `bondplan` generates the bonding diagram, the bondwires, and the pin table.
@@ -311,7 +311,7 @@ Opens a file browser for this folder with `sak-open.py` from the [IIC-OSIC-TOOLS
 make open
 ```
 
-Clicking a button launches the matching tool in the file's own directory, so Xschem finds its `simulations/` folder and KLayout its run outputs where they belong:
+A click on a button launches the matching tool in the file's own directory. Xschem then finds its `simulations/` folder, and KLayout finds its run outputs, where they belong:
 
 | File type | Tool |
 | --- | --- |
@@ -334,10 +334,10 @@ make open OPEN_ARGS=--all              # include the build outputs
 make open OPEN_ARGS="--prune backups"  # skip one more directory name
 ```
 
-At most 400 buttons are drawn at once, because each one is an X window, and what is left out is stated at the end of the list. That cap is easy to hit with `--all`: it pulls in roughly 19000 files at the top level and 5700 in the counter, against 66 in the inverter. Use `--all` from the folder you actually care about, or narrow it with `--prune`, rather than at the top level.
+The script draws at most 400 buttons at once, because each one is an X window. It states at the end of the list what it omitted. That cap is easy to reach with `--all`. `--all` includes roughly 19000 files at the top level and 5700 in the counter, against 66 in the inverter. Use `--all` from the folder you care about, or narrow it with `--prune`. Do not use it at the top level.
 
 > [!NOTE]
-> This target needs a display. Run it inside the container's VNC/noVNC desktop or over X11 forwarding. In a shell-only container it stops with `cannot open a window`. The `.png` and `.pdf` buttons hand the file to the desktop's registered handler, so those two need the full VNC/noVNC session and do not work over a bare X forward.
+> This target needs a display. Run it inside the container's VNC/noVNC desktop, or over X11 forwarding. In a shell-only container it stops with `cannot open a window`. The `.png` and `.pdf` buttons give the file to the desktop's registered handler. Those two therefore need the full VNC/noVNC session, and they do not work over a bare X forward.
 
 
 ### Initialise Git Submodules
@@ -378,16 +378,16 @@ make sim-gl-xschem TB=<testbenchname>
 
 The testbench is selected with the `TB` variable, given without the `.sch` extension (default: `<CELL>_tb_tran`). All testbench schematics are located in `testbenches/xschem/`, and the generated netlists are written to `testbenches/xschem/simulations/`.
 
-Every testbench pulls in a FET `.save` file through its `SAVE` code block (for example `.include chip_top_tb_tran.save`). That file lists the operating-point parameters of every transistor (`ids`, `gm`, `gds`, `vth` and so on), which the `annotate_fet_params` symbols and the `Annotate OP` launcher read back from the raw file. The include uses the bare file name, so it resolves inside `testbenches/xschem/simulations/`, where ngspice runs. Both `sim-gl-xschem` and the schematic's `Simulate` launcher write the file on every run, so it always matches the devices currently in the schematic and a fresh clone needs no manual export. Xschem's **IHP > Create FET .save file** menu entry writes the same file by hand.
+Every testbench includes a FET `.save` file through its `SAVE` code block (for example `.include chip_top_tb_tran.save`). That file lists the operating-point parameters of every transistor (`ids`, `gm`, `gds`, `vth` and so on). The `annotate_fet_params` symbols and the `Annotate OP` launcher read those parameters back from the raw file. The include uses the bare file name, so it resolves inside `testbenches/xschem/simulations/`, where ngspice runs. Both `sim-gl-xschem` and the schematic's `Simulate` launcher write the file on every run. It therefore always matches the devices currently in the schematic, and a fresh clone needs no manual export. Xschem's **IHP > Create FET .save file** menu entry writes the same file by hand.
 
-The simulation runs in **batch mode**: the target netlists the testbench with `xschem netlist` and then invokes `ngspice -b` directly instead of using `xschem simulate`. `xschem simulate` would spawn an interactive ngspice in a terminal detached from `make`: the target would return immediately, the result would never be checked, and the process (with its X server) would leak. Running the simulator directly makes `make` block until the run finishes and see its exit status.
+The simulation runs in **batch mode**. The target netlists the testbench with `xschem netlist`, then calls `ngspice -b` directly. It does not use `xschem simulate`. `xschem simulate` would start an interactive ngspice in a terminal detached from `make`. The target would return immediately, nothing would check the result, and the process would leak, together with its X server. A direct call to the simulator makes `make` wait until the run finishes, and lets it see the exit status.
 
 Because the run is headless, the `plot` commands in a testbench's `.control` block are a no-op and no plot windows appear. Every testbench instead exports its results with `wrdata` to `testbenches/xschem/plot_simulations/data/`, from where they are plotted with `sim-view-xschem`.
 
 > [!NOTE]
 > `sim-gl-xschem` is part of `sim-all`, but it may take a long time depending on the hardware used.
 
-To plot the Xschem simulation results, use `sim-view-xschem`. It runs a plotting script from `testbenches/xschem/plot_simulations/` (`SIM_PLOT_DIR`), selected with the `SCRIPT` variable, given without the `.py` extension (default: `plot_<CELL>`), and reproduces the plots of the testbench's `.control` block with matplotlib from the exported data in `plot_simulations/data/`:
+To plot the Xschem simulation results, use `sim-view-xschem`. It runs a plotting script from `testbenches/xschem/plot_simulations/` (`SIM_PLOT_DIR`). The `SCRIPT` variable selects the script, given without the `.py` extension (default: `plot_<CELL>`). The script reproduces the plots of the testbench's `.control` block with matplotlib, from the exported data in `plot_simulations/data/`:
 
 ```sh
 make sim-view-xschem                      # run the default plotting script (plot_chip_top)
@@ -465,7 +465,17 @@ These commands are also available for the digital macros.
 
 ### Copy Important Reports
 
-To copy the Yosys synthesis checks, antenna reports, post-PnR timing summary, per-corner power reports, IR-drop report, LVS report, and manufacturability report from the latest LibreLane run into `verification/reports/`, run:
+This target copies seven items from the latest LibreLane run into `verification/reports/`:
+
+- the Yosys synthesis checks
+- the antenna reports
+- the post-PnR timing summary
+- the per-corner power reports
+- the IR-drop report
+- the LVS report
+- the manufacturability report
+
+Run:
 
 ```sh
 make copy-reports
@@ -548,13 +558,13 @@ make build-logos
 
 ### Initialize a New Macro
 
-To scaffold a new macro (directory tree, `Makefile`, `README.md`, sizing/plot script skeletons, CACE spec skeleton — or RTL stubs and LibreLane config for digital macros) from the templates in `macros/_templates/`, run:
+This target scaffolds a new macro from the templates in `macros/_templates/`. For an analog macro it creates the directory tree, the `Makefile`, the `README.md`, the sizing and plot script skeletons, and the CACE spec skeleton. For a digital macro it creates RTL stubs and a LibreLane config. Run:
 
 ```sh
 make init-macro MACRO=<name> [TYPE=analog|digital]
 ```
 
-`TYPE` defaults to `analog`. The wrapper cell producing the final GDS is `<core>_top`: for `MACRO=rx_fe` the cells are `rx_fe`/`rx_fe_top`; a name that already ends in `_top` (e.g. `MACRO=vco_top`) yields `vco`/`vco_top`. The script prints the next steps; once the macro has content to build, add it to the `MACROS` list in the top-level `Makefile` so `build-macros` includes it.
+`TYPE` defaults to `analog`. The wrapper cell that produces the final GDS is `<core>_top`. For `MACRO=rx_fe` the cells are `rx_fe`/`rx_fe_top`. A name that already ends in `_top` (e.g. `MACRO=vco_top`) gives `vco`/`vco_top`. The script prints the next steps. When the macro has content to build, add it to the `MACROS` list in the top-level `Makefile`, so that `build-macros` includes it.
 
 To add a sub-block cell inside an existing macro (e.g. a latch inside a DAC), use:
 
@@ -579,7 +589,15 @@ The following command builds the `counter` digital macro:
 make build-counter
 ```
 
-For each digital macro this dispatches to its in-tree `make all`, which runs the macro's full flow: lint, build (FPGA and LibreLane, including netlists and the XSPICE model), verify (DRC and LVS within the LibreLane flow), extract (`magic-pex` on the hardened GDS) and simulate. The simulations run after the build, so the gate-level simulations run on the netlists produced by this build.
+For each digital macro this dispatches to its in-tree `make all`. That target runs the macro's full flow:
+
+1. lint
+2. build (FPGA and LibreLane, including netlists and the XSPICE model)
+3. verify (DRC and LVS within the LibreLane flow)
+4. extract (`magic-pex` on the hardened GDS)
+5. simulate
+
+The simulations run after the build, so the gate-level simulations use the netlists that this build produced.
 
 The FPGA part of that build emulates the macro on a board. It covers three boards across two FPGA architectures (Lattice iCE40 and Lattice ECP5), selected with `BOARD=`, and defaults to the pico-ice. See [macros/counter/fpga/README.md](../macros/counter/fpga/README.md) for the board list, the toolchain notes, and how to add a further one.
 
@@ -604,7 +622,7 @@ All analog macros are included in `build-macros` alongside the digital macros.
 
 ### Build Top
 
-To run LibreLane for the top-level chip and copy the resulting reports, GDS, netlist, and chip render back into the source tree, then add the logo + fill structures and render the final GDS, run:
+This target runs LibreLane for the top-level chip. It copies the resulting reports, GDS, netlist and chip render back into the source tree. It then adds the logo and fill structures, and renders the final GDS. Run:
 
 ```sh
 make build-top
@@ -613,7 +631,7 @@ make build-top
 Internally this executes (in order): `librelane-nodrc` -> `copy-reports` -> `copy-gds` -> `copy-netlist` -> `copy-render` -> `add-logo-fill` -> `render-gds`.
 
 > [!NOTE]
-> `build-top` runs `librelane-nodrc` instead of `librelane` for the same reason the DRC reports are not copied: IHP's `metal1_pin_offgrid` rule trips on the pad ring (see [IHP-Open-PDK#683](https://github.com/IHP-GmbH/IHP-Open-PDK/issues/683#issuecomment-4065791975))).
+> `build-top` runs `librelane-nodrc` instead of `librelane`. The reason is the same one that stops the DRC report copy: IHP's `metal1_pin_offgrid` rule trips on the pad ring (see [IHP-Open-PDK#683](https://github.com/IHP-GmbH/IHP-Open-PDK/issues/683#issuecomment-4065791975))).
 > Once it is fixed upstream, `Makefile :: build-top` switches back to `librelane`.
 
 
@@ -630,7 +648,7 @@ This is useful if you want to rebuild the chip from scratch. Clone the repositor
 
 ### Add Logo and Fill
 
-To add the chip logo (PNG -> GDS) and the fill structures on top of the LibreLane output (so the final GDS in `layout/` includes the artwork), run:
+This target adds the chip logo (PNG -> GDS) and the fill structures on top of the LibreLane output. The final GDS in `layout/` then includes the artwork. Run:
 
 ```sh
 make add-logo-fill
@@ -638,7 +656,7 @@ make add-logo-fill
 
 This calls `scripts/add_logo_fill.sh` and writes `layout/chip_top_logo_fill.gds.gz`. The step is also called from `make build-top`.
 
-The script patches the fill distances of the PDK filler macros (they are hard-coded and only a GUI dialog can change them) so that every layer lands inside its global density window of the regular KLayout DRC, and it draws the die outline on `prBoundary.drawing` (189/0) at the end. The density checks take the chip area from the 189/0 polygons whenever any exist, and a LibreLane chip carries 189/0 only inside the macros it places (its own die area is on 189/4), so without the outline the deck measures the whole die against the bounding box of the macro boundaries and reports false maximum-density violations on every layer.
+The script patches the fill distances of the PDK filler macros. Every layer then lands inside its global density window of the regular KLayout DRC. Those distances are hard-coded, and only a GUI dialog can change them. At the end, the script draws the die outline on `prBoundary.drawing` (189/0). The density checks take the chip area from the 189/0 polygons whenever any exist. A LibreLane chip carries 189/0 only inside the macros that it places, because its own die area is on 189/4. Without the outline, the deck therefore measures the whole die against the bounding box of the macro boundaries. It then reports false maximum-density violations on every layer.
 
 > [!NOTE]
 > In the future, it is planned to replace this script and Makefile target with a custom LibreLane step.
@@ -648,7 +666,7 @@ The script patches the fill distances of the PDK filler macros (they are hard-co
 
 Runs DRC on the GDS layout in `layout/`. Both flows use `sak-drc.sh` and write their reports into per-cell run folders: `verification/drc/<CELL>.magic.drc/` (Magic) and `verification/drc/<CELL>.klayout.drc/` (KLayout, `.lyrdb`). The run folders are wiped at the start of each run, so they always reflect the latest run only.
 
-The `DRC_LEVEL` parameter selects the KLayout DRC level (`sak-drc.sh -l`). It is ignored by `magic-drc`, since Magic has no selectable rule decks and always runs the full rule set compiled into the PDK's Magic tech file:
+The `DRC_LEVEL` parameter selects the KLayout DRC level (`sak-drc.sh -l`). `magic-drc` ignores it. Magic has no selectable rule decks, and it always runs the full rule set compiled into the PDK's Magic tech file:
 
 - `precheck` = core FEOL + BEOL manufacturing rules only (fast iteration)
 - `macro` = block-in-isolation sign-off: `precheck` plus off-grid, zero-area, and pin/label checks (default)
@@ -728,7 +746,7 @@ make klayout-lvs
 make klayout-lvs CELL=chip_top
 ```
 
-**Magic + Netgen LVS** uses `sak-lvs.sh` (Magic + Netgen mode `-m`, the default), which extracts the layout netlist with Magic and compares it against the schematic netlist with Netgen, using the Netgen setup from the IHP Open-PDK:
+**Magic + Netgen LVS** uses `sak-lvs.sh` in Magic + Netgen mode (`-m`, the default). It extracts the layout netlist with Magic. It then compares that netlist against the schematic netlist with Netgen, with the Netgen setup from the IHP Open-PDK:
 
 ```sh
 make magic-lvs
@@ -745,25 +763,25 @@ make symbol-pex                  # build chip_top_pex.sym from chip_top.sym
 make symbol-pex CELL=<cellname>  # build the PEX symbol of another cell
 ```
 
-The generated symbol is a copy of `<CELL>.sym` with two changes: `type=subcircuit` becomes `type=primitive`, and the pin boxes the extracted netlist has no port for are dropped. Everything else (the remaining pin boxes and their order, every text label, `format`, `spectre_format`, `template`, graphics) is inherited, which is exactly what the PEX flow needs:
+The generated symbol is a copy of `<CELL>.sym` with two changes. `type=subcircuit` becomes `type=primitive`. The script also drops the pin boxes for which the extracted netlist has no port. The symbol inherits everything else: the remaining pin boxes and their order, every text label, `format`, `spectre_format`, `template` and the graphics. That is exactly what the PEX flow needs:
 
 - **`type=primitive`** stops Xschem from descending into a schematic of the same name. There is no `<CELL>_pex.sch`, so the instance line is emitted as it stands and the subcircuit comes from the `.include`d PEX netlist instead.
 - **`format="@name @pinlist @symname"`** makes the instance reference `@symname`, which resolves to `<CELL>_pex`, exactly the `.subckt` name the PEX flow writes.
 - **The pin order** is what `sak-pin-reorder.py` reorders the extracted netlist to, so it has to be that of the cell symbol.
 
-`PEX_MERGED_PINS` (default `IOVSS`) names the supply pins that the extraction does not report as ports of their own. `IOVSS` and `VSS` are separate nets in [chip_top.sv](../rtl/chip_top.sv), in the LibreLane netlist `netlist/spice/chip_top.spice` and in the pin labels of the GDS, but both ground rings tap the p-substrate, so the flat Magic extraction sees one ground node and names it `VSS`. The extracted `.subckt` has no `IOVSS` port, and a PEX symbol that still carried the pin would fail the reorder with `[ERROR] Pin count mismatch`. Set the variable to an empty string for a cell whose supplies do stay separate: `make magic-pex PEX_MERGED_PINS=`.
+`PEX_MERGED_PINS` (default `IOVSS`) names the supply pins that the extraction does not report as ports of their own. `IOVSS` and `VSS` are separate nets in three places: [chip_top.sv](../rtl/chip_top.sv), the LibreLane netlist `netlist/spice/chip_top.spice`, and the pin labels of the GDS. But both ground rings tap the p-substrate. The flat Magic extraction therefore sees one ground node, and names it `VSS`. The extracted `.subckt` has no `IOVSS` port. A PEX symbol that still carried the pin would fail the reorder with `[ERROR] Pin count mismatch`. For a cell whose supplies do stay separate, set the variable to an empty string: `make magic-pex PEX_MERGED_PINS=`.
 
-[`scripts/prune_pex_symbol.py`](../scripts/prune_pex_symbol.py) drops those pins and, for the same reason, every repeat of a pin name after the first: a `.subckt` port list holds one entry per net, so pads that share a supply share a port. Only the pin boxes go and every text label stays, so `<CELL>_pex.sym` still reads as the full pad ring while carrying exactly the pins the netlist has a port for.
+[`scripts/prune_pex_symbol.py`](../scripts/prune_pex_symbol.py) drops those pins. For the same reason, it also drops every repeat of a pin name after the first. A `.subckt` port list holds one entry per net, so pads that share a supply share a port. Only the pin boxes go, and every text label stays. `<CELL>_pex.sym` therefore still reads as the full pad ring, and it carries exactly the pins for which the netlist has a port.
 
-`symbol-pex` runs automatically at the start of `klayout-pex` and `magic-pex`, so the symbol is rebuilt from the current `<CELL>.sym` before every extraction and cannot go stale when a pin is added, removed or renamed. Calling it by hand is only needed to refresh the symbol without re-running an extraction. Anything added to the generated file by hand is lost at the next extraction, so make the change in `<CELL>.sym` instead.
+`symbol-pex` runs automatically at the start of `klayout-pex` and `magic-pex`. The symbol is therefore rebuilt from the current `<CELL>.sym` before every extraction. It cannot go stale when a pin is added, removed or renamed. Call `symbol-pex` by hand only to refresh the symbol without a new extraction. The next extraction loses anything added to the generated file by hand, so make the change in `<CELL>.sym` instead.
 
-If `<CELL>.sym` does not exist, the target prints a note and does nothing, which leaves the PEX targets running without a pin reorder just as before. It fails only when `<CELL>.sym` declares neither `type=subcircuit` nor `type=primitive`.
+If `<CELL>.sym` does not exist, the target prints a note and does nothing. The PEX targets then run without a pin reorder, just as before. The target fails only when `<CELL>.sym` declares neither `type=subcircuit` nor `type=primitive`.
 
-The cell symbol `<CELL>.sym` that this one is derived from is a hand-drawn source file at the chip top-level, because its pins are the pad ring and their placement is part of the drawing. The digital macro has two further targets for its own cell symbol, `symbol-gl` to scaffold one from the ports of a freshly hardened design and `symbol-check` to verify it on every build, see [Build the Xschem Symbol](../macros/counter/README.md#build-the-xschem-symbol). They are macro targets only: they key on the `sim_pinname` property that the gate-level XSPICE flow needs, and `chip_top.sym` neither carries it nor has an XSPICE model to match.
+This symbol is derived from the cell symbol `<CELL>.sym`. At the chip top-level, `<CELL>.sym` is a hand-drawn source file, because its pins are the pad ring and their placement is part of the drawing. The digital macro has two further targets for its own cell symbol. `symbol-gl` scaffolds one from the ports of a freshly hardened design. `symbol-check` verifies it on every build. See [Build the Xschem Symbol](../macros/counter/README.md#build-the-xschem-symbol). They are macro targets only. They key on the `sim_pinname` property that the gate-level XSPICE flow needs, and `chip_top.sym` neither carries it nor has an XSPICE model to match.
 
 > [!NOTE]
-> Every symbol in this project also carries `spectre_format="@name ( @pinlist ) @symname"`. Xschem writes that line itself whenever a symbol is built from a schematic's pin list (key `a`, `make_sym.awk`), and it is read **only** by the Spectre netlister, which is also the one that drives VACASK (`xschem.tcl` configures `vacask "$N"` as the default simulator for `netlist_type spectre`). The SPICE netlister used for ngspice ignores it, so it has no effect on any target in this Makefile.
-> Do not strip it: without it, instances of the symbol are **silently dropped** from a Spectre/VACASK netlist and the `subckt` line of the symbol itself comes out with an empty port list, with no warning at all.
+> Every symbol in this project also carries `spectre_format="@name ( @pinlist ) @symname"`. Xschem writes that line itself whenever a symbol is built from a schematic's pin list (key `a`, `make_sym.awk`). **Only** the Spectre netlister reads it. That netlister is also the one that drives VACASK: `xschem.tcl` configures `vacask "$N"` as the default simulator for `netlist_type spectre`. The SPICE netlister used for ngspice ignores the line, so it has no effect on any target in this Makefile.
+> Do not remove the line. Without it, a Spectre/VACASK netlist **silently drops** instances of the symbol. The `subckt` line of the symbol itself then comes out with an empty port list, with no warning at all.
 
 
 ### Check the Cell Symbol Against the Layout Netlist
@@ -784,7 +802,7 @@ A pin name carried by several pads is reported and not rejected, since those pad
 
 A 1-bit bus is reconciled first: Yosys flattens `input_PAD [0:0]` to the scalar `input_PAD`, which matches the symbol pin `input_PAD[0]`.
 
-`check-ports` runs automatically after `symbol-pex` in `klayout-pex` and `magic-pex`, so the drift fails the build there instead of surfacing later as a pin count mismatch in the reorder. For a cell without a layout netlist the check prints a note and passes, which leaves the PEX targets for subcells running as before.
+`check-ports` runs automatically after `symbol-pex` in `klayout-pex` and `magic-pex`. The drift therefore fails the build there. It does not appear later as a pin count mismatch in the reorder. For a cell without a layout netlist, the check prints a note and passes. The PEX targets for subcells then run as before.
 
 
 ### Parasitic Extraction (PEX)
@@ -803,7 +821,7 @@ The `EXT_MODE` parameter selects the extraction mode:
 > [!NOTE]
 > For `klayout-pex`, `EXT_MODE=1` (C-decoupled) is not yet supported by kpex and automatically falls back to `EXT_MODE=2` (C-coupled) with a warning.
 
-The `.subckt` name in the extracted SPICE file is `<CELL>_pex`: `magic-pex` sets it directly via the `sak-pex.sh` option `-n <CELL>_pex`, while for `klayout-pex` it is automatically renamed from `<CELL>` (kpex).
+The `.subckt` name in the extracted SPICE file is `<CELL>_pex`. `magic-pex` sets it directly, with the `sak-pex.sh` option `-n <CELL>_pex`. For `klayout-pex`, kpex renames it automatically from `<CELL>`.
 
 Both targets start by running `symbol-pex` (see above), so `schematic/xschem/<CELL>_pex.sym` always reflects the current cell symbol. The `.subckt` pin order in the extracted SPICE file is then reordered with `sak-pin-reorder.py` (installed in the IIC-OSIC-TOOLS container) to match that symbol's pin positions. This ensures the PEX netlist can be used directly with the corresponding Xschem symbol for simulation regardless of the selected `EXT_MODE`.
 
@@ -812,7 +830,7 @@ Both targets finish by running [`scripts/check_pex_ports.py`](../scripts/check_p
 - A port that is declared in the `.subckt` line but referenced by no element at all. Whatever is wired to that pin from outside is then left floating.
 - A port whose net was split into `<port>.t<n>` and `<port>.n<n>` fragments by `extresist` (`EXT_MODE=3`), where none of the fragments is connected back to the port. The pin is then dangling even though the fragments themselves are wired up.
 
-Both produce a netlist that ngspice reads without a single warning while the cell behaves completely differently in simulation, so the check is worth the two seconds it costs. It can also be run by hand on any SPICE netlist:
+Both cases produce a netlist that ngspice reads without a single warning, while the cell behaves completely differently in simulation. The check is therefore worth the two seconds it costs. You can also run it by hand on any SPICE netlist:
 
 ```sh
 python3 scripts/check_pex_ports.py netlist/pex/chip_top_magic_pex_1.spice
@@ -840,10 +858,10 @@ make magic-pex CELL=chip_top EXT_MODE=3
 
 For full-RC extraction (`EXT_MODE=3`), `magic-pex` additionally exposes the three `extresist` tuning parameters of `sak-pex.sh`. They are ignored in `EXT_MODE=1`/`2`.
 
-A full-RC extraction of a whole chip would produce a resistor network far too large to simulate, and most of it would be wires so short that their resistance does not matter. The three parameters are the filters Magic applies to keep only the part of the network that is worth having. They run in this order:
+A full-RC extraction of a whole chip would produce a resistor network far too large to simulate. Most of it would be wires so short that their resistance does not matter. The three parameters are the filters that Magic applies, to keep only the part of the network that is worth having. They run in this order:
 
 1. **`THRESHOLD`** (`-t`, in mOhm, default `10000` = 10 Ohm) decides **which nets are extracted at all**. Before doing any real work, Magic makes a quick end-to-end resistance guess for every net. The guess is deliberately pessimistic: it is an absolute worst case. Nets that stay below `THRESHOLD` even in that worst case cannot matter, so they are treated as ideal wires and skipped. This is the cheap first pass that removes the many short, low-resistance nets.
-2. **`MINDELAY`** (`-y`, in ps, default `1`) decides **which of the extracted nets are kept**. Because the guess above overestimates, Magic re-checks each net once it has been properly extracted and discards its resistor network again if the RC delay it adds stays below `MINDELAY`. Setting `MINDELAY=0` switches the delay criterion off and applies `THRESHOLD` a second time instead, now against the accurately extracted resistance rather than the initial guess.
+2. **`MINDELAY`** (`-y`, in ps, default `1`) decides **which of the extracted nets are kept**. The guess above overestimates, so Magic re-checks each net after a proper extraction. It discards the resistor network again if the RC delay that the net adds stays below `MINDELAY`. `MINDELAY=0` disables the delay criterion. Magic then applies `THRESHOLD` a second time instead, against the accurately extracted resistance, and not against the initial guess.
 3. **`MINRES`** (`-r`, in mOhm, default `1000` = 1 Ohm) decides **how detailed the kept networks are**. Inside a net, neighbouring resistors below `MINRES` are merged as far as possible, which shrinks the network without changing its overall resistance much.
 
 In short: `THRESHOLD` and `MINDELAY` control *how many* nets carry parasitic resistance, while `MINRES` controls *how finely* each of them is modelled. Raising all three gives a smaller netlist that simulates faster with less detail. Lowering them gives a more accurate but considerably larger one.
@@ -884,7 +902,7 @@ make bondplan VERSION=2.1.0          # stamp another version on the sheet
 
 The `VERSION` variable is passed to the flow and printed in the title block (`DIE: CHIP_TOP - V.1.0.0`), so the version number is maintained in the Makefile only.
 
-The flow ([packaging/scripts/run_bondplan.py](../packaging/scripts/run_bondplan.py)) is driven by [packaging/config.yaml](../packaging/config.yaml), which holds the full package-pin-to-die-pad `PINOUT` in a LibreLane-style config format. It detects the die bondpads (`Passiv` openings and `TopMetal1.text` labels), places the die in the package cavity, draws the bondwires, and checks wire lengths, crossings, spacing, lead skew and analog guard clearances. Outputs:
+[packaging/config.yaml](../packaging/config.yaml) drives the flow ([packaging/scripts/run_bondplan.py](../packaging/scripts/run_bondplan.py)). That config file holds the full package-pin-to-die-pad `PINOUT`, in a LibreLane-style config format. The flow detects the die bondpads (`Passiv` openings and `TopMetal1.text` labels). It places the die in the package cavity and draws the bondwires. It then checks wire lengths, crossings, spacing, lead skew and analog guard clearances. Outputs:
 
 - `packaging/layout/chip_top_bondplan.gds`: the bondplan GDS
 - [packaging/result.md](../packaging/result.md): bond report with summary and bond table
@@ -893,8 +911,8 @@ The flow ([packaging/scripts/run_bondplan.py](../packaging/scripts/run_bondplan.
 See [packaging/README.md](../packaging/README.md) for the full flow documentation and configuration reference.
 
 <p align="center">
-  <a href="packaging/render/chip_top_bondplan_white.png">
-    <img src="packaging/render/chip_top_bondplan_white.png" alt="Bonding diagram of the ihp-sg13cmos5l AMS template chip in a QFN32 package" width=70%>
+  <a href="../packaging/render/chip_top_bondplan_white.png">
+    <img src="../packaging/render/chip_top_bondplan_white.png" alt="Bonding diagram of the ihp-sg13cmos5l AMS template chip in a QFN32 package" width=70%>
   </a>
   <br>
   <em>Bonding diagram of the ihp-sg13cmos5l AMS template chip in a QFN32 package.</em>
@@ -903,7 +921,7 @@ See [packaging/README.md](../packaging/README.md) for the full flow documentatio
 
 ### Build, Verify and Simulate All
 
-Runs `build-all` first, followed by Magic DRC for both `chip_top` and `chip_top_logo_fill`, then the chip simulations (`sim-all`) and finally generates the bondplan (`bondplan`) once all checks have passed:
+This target runs `build-all` first. It then runs Magic DRC for both `chip_top` and `chip_top_logo_fill`, and the chip simulations (`sim-all`). When all checks have passed, it generates the bondplan (`bondplan`):
 
 ```sh
 make all
@@ -912,7 +930,7 @@ make all
 
 ### Release
 
-Copies the final top-level GDS with logo and fill structures from `layout/` to `release/v.<VERSION>/gds/`, copies the generated netlists into `release/v.<VERSION>/netlist/`, and copies the chip renders and the bonding diagram into `release/v.<VERSION>/img/`.
+This target copies the final top-level GDS, with logo and fill structures, from `layout/` to `release/v.<VERSION>/gds/`. It copies the generated netlists into `release/v.<VERSION>/netlist/`. It copies the chip renders and the bonding diagram into `release/v.<VERSION>/img/`.
 
 The following netlist folders are exported:
 
@@ -925,7 +943,7 @@ The following netlist folders are exported:
 > `netlist/pex` is **not** copied by the `release` target. It holds the Magic-extracted top-level netlist (`chip_top_magic_pex_1.spice`, ~67 MiB and ~479k lines even in the C-decoupled `EXT_MODE=1`). Since `release/` is committed to the repository, copying it would add those ~67 MiB to every released version. The netlist stays available in `netlist/pex/`.
 
 > [!NOTE]
-> `netlist/schematic` and `netlist/layout` are still empty. The schematic netlist is written by `klayout-lvs-netlist` / `magic-lvs-netlist` and the extracted layout netlist by `klayout-lvs` / `magic-lvs`, and the top-level LVS is not finished yet. Both folders fill up once it runs through.
+> `netlist/schematic` and `netlist/layout` are still empty. `klayout-lvs-netlist` / `magic-lvs-netlist` write the schematic netlist. `klayout-lvs` / `magic-lvs` write the extracted layout netlist. The top-level LVS is not finished yet. Both folders fill when it runs through.
 
 The following chip renders are exported:
 
@@ -960,17 +978,17 @@ The `regression` target is the project's end-to-end smoke test for the [IIC-OSIC
 make regression
 ```
 
-This target also runs automatically in continuous integration: the [`regression`](../.github/workflows/regression.yml) GitHub Actions workflow runs `make regression` inside the `IIC-OSIC-TOOLS` container nightly (and on manual dispatch), and its status is shown by the *Regression* badge at the top of this README. The scheduled run is gated so it only executes when there have been changes since the previous night.
+This target also runs automatically in continuous integration. The [`regression`](../.github/workflows/regression.yml) GitHub Actions workflow runs `make regression` inside the `IIC-OSIC-TOOLS` container nightly, and on manual dispatch. The *Regression* badge shows its status. A gate on the scheduled run lets it execute only when there have been changes since the previous night.
 
 To keep the runtime low while still covering the full toolchain, the regression makes the following trade-offs:
 
 - The counter macro is hardened with `librelane-magicdrc` (only **Magic DRC** enabled, the slower KLayout DRC is skipped). Netgen LVS still runs as part of the flow.
 - The chip top-level runs `librelane-nodrc`. All DRC checks are skipped to save runtime on the large top-level assembly. The macros and IP blocks are DRC-checked individually beforehand, so this only leaves the top-level routing/fill unchecked.
-- KLayout DRC (`sak-drc.sh`) is skipped inside the LibreLane runs, but is still exercised in the bondpad and logo IP builds, and in the inverter `klayout-verify`.
+- The LibreLane runs skip KLayout DRC (`sak-drc.sh`). The bondpad and logo IP builds still exercise it, and so does the inverter `klayout-verify`.
 - Only **one** logo (`sg13cmos5l_ip__jku`) is regenerated. It is the only step that exercises the PNG to GDS flow. The second logo (`sg13cmos5l_ip__jku_names`) uses an identical toolchain and reuses its committed views.
 - Exactly **one** CACE parameter set is run (the AC VDD sweep `ac_params`, no Monte Carlo). Swap `ac_params` for `ac_mc_params` / `ac_mm_params` in the target to also exercise the Monte Carlo flow.
 
-The regression runs bottom-up: first the inverter and counter macros, then the top-level prerequisites (submodules, bondpad, logo) and finally the chip top-level LibreLane run that integrates the freshly built macros and IP. After the counter is hardened, `copy-final` copies its fresh `flow/final/` views into `macros/counter/final/`, so that the gate-level simulation (`sim-gl-cocotb`) and the chip top-level integration use the freshly built outputs rather than the committed ones.
+The regression runs bottom-up. First come the inverter and counter macros. Then come the top-level prerequisites (submodules, bondpad, logo). Last comes the chip top-level LibreLane run, which integrates the freshly built macros and IP. After the counter is hardened, `copy-final` copies its fresh `flow/final/` views into `macros/counter/final/`. The gate-level simulation (`sim-gl-cocotb`) and the chip top-level integration then use the freshly built outputs, and not the committed ones.
 
 The following tools and flows are checked:
 
