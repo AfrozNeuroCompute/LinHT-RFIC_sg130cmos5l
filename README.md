@@ -16,11 +16,15 @@ analog IP shuttle that runs on the same PDK. The submission deadline is 2027-07-
 
 ## Aim
 
-LinHT is an open-source handheld radio. It transmits and receives **M17**, an open digital
-voice and data protocol, and analog FM.
+LinHT is an experimental, open-source handheld radio platform developed by the M17 Project community.
+Designed as a true open-hardware alternative to proprietary commercial transceivers,
+it utilizes modern Software-Defined Radio (SDR) technology to move signal processing entirely into software.
+Currently, the device is tailored for the UHF 420–450 MHz frequency range (the amateur 70cm band).
+In the future, the device should be expanded with lower bands coverage (144-148 MHz, 220-225 MHz).
 
-No vendor sells the IC that the radio needs. It must cover 130 MHz to 520 MHz without a
-gap. It must also give the host processor an I/Q data stream.
+No vendor sells the IC that the radio needs (and doesn't cost a fortune). The chip should cover 130 MHz to 520 MHz,
+ideally without gaps. It must also give the host processor an I/Q data stream.
+LVDS should be avoided, I2S is the target.
 
 This repository designs that IC. It will hold every block of it, and it builds them all on
 one PDK: **IHP SG13CMOS5L**. [`doc/design_plan.md`](doc/design_plan.md) states the
